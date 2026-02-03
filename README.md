@@ -1,116 +1,132 @@
 # PFLogSumm-HTML-GUI
-Bash shell script to Generate POSTFIX statistics HTML report using pflogsumm as the backend
 
-The script processes the pflogsumm output to an easy to view HTML report
+A modern, responsive Bash shell script that generates beautiful Postfix statistics HTML reports using `pflogsumm` as the backend.
 
-## Screenshots of the web interface
+The tool refines raw `pflogsumm` output into a premium, interactive dashboard with dynamic graphs, multi-language support, and a mobile-friendly interface.
 
-![Screenshot1](Screenshot1.png)
+## 🚀 Key Features
 
-![Screenshot1](Screenshot2.png)
+- **Modern UI**: Powered by **Bootstrap 5**, providing a sleek, responsive dashboard and detailed report views.
+- **Interactive Graphs**: Visualizes traffic trends (Per-Day and Per-Hour) using **Highcharts**.
+- **Multi-Language (i18n)**: Fully supports **English** and **Spanish** out of the box. Easily extendable to other languages.
+- **Dynamic Dashboard**: Auto-generates a monthly overview for quick navigation between reports.
+- **Lightweight & Portable**: Orchestrated entirely in Bash, using external templates for easy maintenance.
 
+## 📸 Screenshots
 
-## Requirements 
+![Dashboard Overview](Screenshot1.png)
+*Modern Dashboard with Monthly Report Navigation*
 
-*pflogsumm* needs to be installed
+![Detailed Report](Screenshot2.png)
+*Detailed Statistics with Status Cards and Interactive Graphs*
 
-For RedHat based operating systems
+## 🛠 Requirements
 
+- **pflogsumm**: The primary backend for log analysis.
+- **envsubst**: Used for template variable replacement (usually part of `gettext-base` or `gettext`).
+
+### Installation for RedHat/CentOS/Fedora
+
+```bash
+yum -y install postfix-perl-scripts gettext
 ```
-yum -y install postfix-perl-scripts 
+
+### Installation for Ubuntu/Debian
+
+```bash
+apt-get update
+apt-get -y install pflogsumm gettext-base
 ```
 
-For Ubuntu/Debian based operating systems
+## 📥 Project Installation
 
-```
-apt-get -y install pflogsumm 
-```
+Clone the repository to a location of your choice:
 
-## Install ISPConfig Webmail
-
-You can clone or download the script direct to a location of your choice. Here is an example setup:
-```
+```bash
 cd /opt
-git clone https://github.com/jniltinho/PFLogSumm-HTML-GUI.git
-mkdir -p /var/www/webmail.domain.com/web/stats/grafico
-
-echo '#PFLOGSUMUI CONFIG
-
-##  Postfix Log Location
-LOGFILELOCATION="/var/log/mail.log"
-
-##  pflogsumm details
-PFLOGSUMMOPTIONS=" --verbose_msg_detail --zero_fill "
-PFLOGSUMMBIN="/usr/sbin/pflogsumm  "
-
-##  HTML Output
-HTMLOUTPUTDIR="/var/www/webmail.domain.com/web/stats/grafico/"
-HTMLOUTPUT_INDEXDASHBOARD="index.html"
-' >/etc/pflogsumui.conf
-
-/opt/PFLogSumm-HTML-GUI/pflogsummUIReport.sh
-
-## Show web
-## http://webmail.domain.com/stats/grafico/
+git clone https://github.com/RiaanPretoriusSA/PFLogSumm-HTML-GUI.git
 ```
 
-## Script updates
+### Keeping it Updated
 
-If you want to update to the latest version you can run this (provided you used GIT to install)
+If you installed via Git, you can easily pull the latest improvements:
 
-```
+```bash
 cd /opt/PFLogSumm-HTML-GUI
 git pull
 ```
 
-That will ensure the latest version
+## ⚙️ Configuration
 
+The script uses a configuration file located at `/etc/pflogsumui.conf`. Running the script for the first time will automatically generate a default configuration if it does not exist.
 
-## Configuration
+### Example Configuration (`/etc/pflogsumui.conf`)
 
-On first time run the script will automatically  create the default configuration file: /etc/pflogsumui.conf
+```bash
+# PFLOGSUMUI CONFIGURATION
 
-```
-#PFLOGSUMUI CONFIG
+## Postfix Log Location
+LOGFILELOCATION="/var/log/maillog"
 
-##  Postfix Log Location
-LOGFILELOCATION="/var/log/mail.log"
-
-##  pflogsumm details
+## pflogsumm binary and options
+PFLOGSUMMBIN="/usr/sbin/pflogsumm"
 PFLOGSUMMOPTIONS=" --verbose_msg_detail --zero_fill "
-PFLOGSUMMBIN="/usr/sbin/pflogsumm  "
 
-##  HTML Output
-HTMLOUTPUTDIR="/var/www/webmail.domain.com/web/stats/grafico/"
+## HTML Output Settings
+HTMLOUTPUTDIR="/var/www/html/"
 HTMLOUTPUT_INDEXDASHBOARD="index.html"
 
+## Script Directory (Required for i18n and Templates)
+SCRIPTDIR="/opt/PFLogSumm-HTML-GUI"
+
+## Selected Language (en | es)
+LANGUAGE="en"
 ```
 
-The parts that might need changing according to your environment  is:
+### Internationalization (i18n)
 
-LOGFILELOCATION and HTMLOUTPUTDIR
+The tool supports multiple languages. Language files are stored in the `languages/` directory.
 
-The default locations are REDHAT/CENTOS based operating systems
+- To switch languages permanently, update `LANGUAGE` in your `/etc/pflogsumui.conf`.
+- To override the language for a single run, prefix the command with the `LANGUAGE` variable:
 
-## Create a crontab 
+```bash
+# Run in Spanish
+LANGUAGE=es /opt/PFLogSumm-HTML-GUI/pflogsummUIReport.sh
 
-The script needs to run once a day to update the reports using CRON. Note, the scripts need access to the maillog as root or a SUDO user with access to the maillog and web directories.
-
-### Example crontab entry for 11:50 PM
-
-Because we want the report for the previous day, we run this report one minute before midnight
-
+# Run in English
+LANGUAGE=en /opt/PFLogSumm-HTML-GUI/pflogsummUIReport.sh
 ```
-50 11 * * * /opt/PFLogSumm-HTML-GUI/pflogsummUIReport.sh >/dev/null 2>&1
+
+> [!NOTE]
+> If `LANGUAGE` is explicitly set in `/etc/pflogsumui.conf`, it will overwrite the command-line environment variable. To allow command-line overrides, ensure the `LANGUAGE` line in the config file is commented out or removed.
+> [!TIP]
+> To add a new language, copy `languages/en.sh` to a new file (e.g., `languages/fr.sh`) and translate the definitions.
+
+## ⏲️ Automation (Crontab)
+
+To keep your dashboard up to date, schedule the script to run daily via Cron. Since `pflogsumm` usually reports on the current day's logs, running it just before midnight is recommended.
+
+**Note**: The script requires root or a user with write access to the web directory and read access to the maillog.
+
+### Example Crontab (Runs daily at 11:50 PM)
+
+```bash
+50 23 * * * /opt/PFLogSumm-HTML-GUI/pflogsummUIReport.sh >/dev/null 2>&1
 ```
-## Note about ZIMBRA (if you are using it)
 
-Zimbra: The World's Leading Open Source Email Collaboration Solution
+## 🛡️ Security Note
 
-Zimbra installs its own pflogsumm script. If you want to use that script instead you can create a symlink to fix the script paths
+> [!WARNING]
+> The generated reports expose end-user email addresses. **You MUST password-protect the directory** where these files are hosted (e.g., using `.htaccess` or your web server's authentication mechanism).
 
-```
+## 🏢 Zimbra Integration
+
+If you are using Zimbra, it includes its own `pflogsumm` version. You can point the script to it by creating a symlink:
+
+```bash
 ln -s /opt/zimbra/common/bin/pflogsumm.pl /usr/sbin/pflogsumm
 ```
 
-# WARNING: The reports expose user email accounts. You MUST password protect the directory you are hosting the files in
+---
+*Created by [Riaan Pretorius](mailto:pretorius.riaan@gmail.com). Modernized and enhanced by the community.*
