@@ -66,7 +66,7 @@ The script uses a configuration file located at `/etc/pflogsumui.conf`. Running 
 # PFLOGSUMUI CONFIGURATION
 
 ## Postfix Log Location
-LOGFILELOCATION="/var/log/maillog"
+LOGFILELOCATION="/var/log/mail.log"
 
 ## pflogsumm binary and options
 PFLOGSUMMBIN="/usr/sbin/pflogsumm"
@@ -107,7 +107,7 @@ LANGUAGE=en /opt/PFLogSumm-HTML-GUI/pflogsummUIReport.sh
 
 To keep your dashboard up to date, schedule the script to run daily via Cron. Since `pflogsumm` usually reports on the current day's logs, running it just before midnight is recommended.
 
-**Note**: The script requires root or a user with write access to the web directory and read access to the maillog.
+**Note**: The script requires root or a user with write access to the web directory and read access to the mail.log.
 
 ### Example Crontab (Runs daily at 11:50 PM)
 
