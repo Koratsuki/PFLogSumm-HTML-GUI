@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  pflogsumm-gui:
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      # Opcional: montar el directorio del proyecto para desarrollo
+      - .:/opt/PFLogSumm-HTML-GUI
+      # Opcional: montar el log si quieres cambiarlo dinámicamente
+      - ./mail.log:/var/log/maillog
+    environment:
+      # Opcional: configurar idioma
+      - LANGUAGE=en
