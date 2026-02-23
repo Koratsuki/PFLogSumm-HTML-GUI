@@ -9,7 +9,7 @@ services:
       # Opcional: montar el directorio del proyecto para desarrollo
       - .:/opt/PFLogSumm-HTML-GUI
       # Opcional: montar el log si quieres cambiarlo dinámicamente
-      - ./mail.log:/var/log/maillog
+      - ./mail.log:/var/log/mail.log
     environment:
       # Opcional: configurar idioma
       - LANGUAGE=en
