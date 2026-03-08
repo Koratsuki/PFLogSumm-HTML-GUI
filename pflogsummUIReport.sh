@@ -189,7 +189,30 @@ mv /tmp/temp_report.html "$HTMLOUTPUTDIR/data/$CURRENTYEAR-$CURRENTMONTH-$CURREN
 #======================================================
 # Generate Dashboard Index
 #======================================================
-# Count reports
+
+# First: Generate the *_rpt.html files
+rm -f $HTMLOUTPUTDIR/data/*_rpt.html
+for filename in $HTMLOUTPUTDIR/data/[0-9]*.html; do
+    [ -e "$filename" ] || continue
+    filenameWithExtOnly="${filename##*/}"
+    filenameWithoutExtension="${filenameWithExtOnly%.*}"
+    case $filenameWithExtOnly in
+        *Jan* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/jan_rpt.html ;;
+        *Feb* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/feb_rpt.html ;;
+        *Mar* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/mar_rpt.html ;;
+        *Apr* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/apr_rpt.html ;;
+        *May* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/may_rpt.html ;;
+        *Jun* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/jun_rpt.html ;;
+        *Jul* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/jul_rpt.html ;;
+        *Aug* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/aug_rpt.html ;;
+        *Sep* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/sep_rpt.html ;;
+        *Oct* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/oct_rpt.html ;;
+        *Nov* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/nov_rpt.html ;;
+        *Dec* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/dec_rpt.html ;;
+    esac  
+done
+
+# Then: Calculate the counts and build the cards
 JanRPTCount=$(find $HTMLOUTPUTDIR/data -maxdepth 1 -type f -name "*Jan*.html" | wc -l)
 FebRPTCount=$(find $HTMLOUTPUTDIR/data -maxdepth 1 -type f -name "*Feb*.html" | wc -l)
 MarRPTCount=$(find $HTMLOUTPUTDIR/data -maxdepth 1 -type f -name "*Mar*.html" | wc -l)
@@ -203,7 +226,6 @@ OctRPTCount=$(find $HTMLOUTPUTDIR/data -maxdepth 1 -type f -name "*Oct*.html" | 
 NovRPTCount=$(find $HTMLOUTPUTDIR/data -maxdepth 1 -type f -name "*Nov*.html" | wc -l)
 DecRPTCount=$(find $HTMLOUTPUTDIR/data -maxdepth 1 -type f -name "*Dec*.html" | wc -l)
 
-# Build Month Cards
 MONTH_CARDS=""
 months=("Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug" "Sep" "Oct" "Nov" "Dec")
 for m in "${months[@]}"; do
@@ -212,7 +234,12 @@ for m in "${months[@]}"; do
     label_var="L_${m^^}"
     label=${!label_var}
     lower_m=$(echo "$m" | tr '[:upper:]' '[:lower:]')
-    
+    rpt_file="$HTMLOUTPUTDIR/data/${lower_m}_rpt.html"
+    if [ -f "$rpt_file" ]; then
+        rpt_content=$(cat "$rpt_file")
+    else
+        rpt_content="<div class='text-muted small'>${L_NO_REPORTS:-No reports found}</div>"
+    fi
     MONTH_CARDS+="
     <div class='col-md-4 col-lg-3 py-2'>
         <div class='card h-100 shadow-sm'>
@@ -227,7 +254,7 @@ for m in "${months[@]}"; do
                     </button>
                     <div id='${m}Card' class='collapse mt-2'>
                         <div class='list-group list-group-flush ${lower_m}List pt-2' style='max-height: 200px; overflow-y: auto;'>
-                            <!-- Dynamic Item List-->
+                            $rpt_content
                         </div>
                     </div>
                 </div>
@@ -240,32 +267,6 @@ export MONTH_CARDS
 
 # Generate Dashboard
 envsubst < "${SCRIPTDIR}/index_dashboard_template.html" > "$HTMLOUTPUTDIR/$HTMLOUTPUT_INDEXDASHBOARD"
-
-#======================================================
-# Update Clickable Index Files (imported dynamicly)
-#======================================================
-rm -f $HTMLOUTPUTDIR/data/*_rpt.html
-
-for filename in $HTMLOUTPUTDIR/data/[0-9]*.html; do
-    [ -e "$filename" ] || continue
-    filenameWithExtOnly="${filename##*/}"
-    filenameWithoutExtension="${filenameWithExtOnly%.*}"
- 
-    case $filenameWithExtOnly in
-        *Jan* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/jan_rpt.html ;;
-        *Feb* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/feb_rpt.html ;;
-        *Mar* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/mar_rpt.html ;;
-        *Apr* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/apr_rpt.html ;;
-        *May* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/may_rpt.html ;;
-        *Jun* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/jun_rpt.html ;;
-        *Jul* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/jul_rpt.html ;;
-        *Aug* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/aug_rpt.html ;;
-        *Sep* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/sep_rpt.html ;;
-        *Oct* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/oct_rpt.html ;;
-        *Nov* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/nov_rpt.html ;;
-        *Dec* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/dec_rpt.html ;;
-    esac  
-done
 
 # Clean UP
 rm -f /tmp/mailreport /tmp/GrandTotals /tmp/PerDayTrafficSummary* /tmp/PerHourTrafficDailyAverage* /tmp/HostDomainSummary* /tmp/Sendersby* /tmp/Recipientsby* /tmp/Messageswithnosizedata* /tmp/messagedeferraldetail /tmp/messagebouncedetaibyrelay /tmp/warnings /tmp/FatalErrors
