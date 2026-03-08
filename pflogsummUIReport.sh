@@ -8,7 +8,7 @@
 
 #CONFIG FILE LOCATION
 PFSYSCONFDIR="/etc"
-SCRIPTDIR="/home/koratsuki/Dev/Projects/PFLogSumm-HTML-GUI"
+SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 #Create Blank Config File if it does not exist
 if [ ! -f ${PFSYSCONFDIR}/"pflogsumui.conf" ]
@@ -17,7 +17,7 @@ tee ${PFSYSCONFDIR}/"pflogsumui.conf" <<EOF
 #PFLOGSUMUI CONFIG
 
 ##  Postfix Log Location
-LOGFILELOCATION="/var/log/maillog"
+LOGFILELOCATION="/var/log/mail.log"
 
 ##  pflogsumm details
 ##  NOTE: DONT USE -d today - breaks the script
@@ -64,7 +64,7 @@ MOVEF="/usr/bin/mv -f "
 REPORTDATE=$(date '+%Y-%m-%d %H:%M:%S')
 CURRENTYEAR=$(date +'%Y')
 CURRENTMONTH=$(date +'%b')
-CURRENTDAY=$(date +"%e")
+CURRENTDAY=$(date +"%d")
 
 # Run pflogsumm
 $PFLOGSUMMBIN $PFLOGSUMMOPTIONS  -e $LOGFILELOCATION > /tmp/mailreport
@@ -163,22 +163,28 @@ done < /tmp/Messageswithnosizedata > /tmp/Messageswithnosizedata.html
 export LANGUAGE ACTIVEHOSTNAME REPORTDATE CURRENTYEAR CURRENTMONTH CURRENTDAY
 export $(compgen -v L_)
 
-export PerDayTrafficSummaryTable=$(cat /tmp/PerDayTrafficSummary.html)
-export PerHourTrafficDailyAverageTable=$(cat /tmp/PerHourTrafficDailyAverage.html)
-export HostDomainSummaryMessageDeliveryTable=$(cat /tmp/HostDomainSummaryMessageDelivery.html)
-export HostDomainSummaryMessagesReceived=$(cat /tmp/HostDomainSummaryMessagesReceived.html)
-export Sendersbymessagecount=$(cat /tmp/Sendersbymessagecount.html)
-export RecipientsbyMessageCount=$(cat /tmp/Recipientsbymessagecount.html)
-export SendersbyMessageSize=$(cat /tmp/Sendersbymessagesize.html)
-export Recipientsbymessagesize=$(cat /tmp/Recipientsbymessagesize.html)
-export Messageswithnosizedata=$(cat /tmp/Messageswithnosizedata.html)
-export MessageDeferralDetail=$(cat /tmp/messagedeferraldetail)
-export MessageBounceDetailbyrelay=$(cat /tmp/messagebouncedetaibyrelay)
-export MailWarnings=$(cat /tmp/warnings)
-export MailFatalErrors=$(cat /tmp/FatalErrors)
+PerDayTrafficSummaryTable=$(cat /tmp/PerDayTrafficSummary.html)
+PerHourTrafficDailyAverageTable=$(cat /tmp/PerHourTrafficDailyAverage.html)
+HostDomainSummaryMessageDeliveryTable=$(cat /tmp/HostDomainSummaryMessageDelivery.html)
+HostDomainSummaryMessagesReceived=$(cat /tmp/HostDomainSummaryMessagesReceived.html)
+Sendersbymessagecount=$(cat /tmp/Sendersbymessagecount.html)
+RecipientsbyMessageCount=$(cat /tmp/Recipientsbymessagecount.html)
+SendersbyMessageSize=$(cat /tmp/Sendersbymessagesize.html)
+Recipientsbymessagesize=$(cat /tmp/Recipientsbymessagesize.html)
+Messageswithnosizedata=$(cat /tmp/Messageswithnosizedata.html)
+MessageDeferralDetail=$(cat /tmp/messagedeferraldetail)
+MessageBounceDetailbyrelay=$(cat /tmp/messagebouncedetaibyrelay)
+MailWarnings=$(cat /tmp/warnings)
+MailFatalErrors=$(cat /tmp/FatalErrors)
 
 # Generate the Report HTML
-envsubst < "${SCRIPTDIR}/Report_Template.html" > "$HTMLOUTPUTDIR/data/$CURRENTYEAR-$CURRENTMONTH-$CURRENTDAY.html"
+envsubst < "${SCRIPTDIR}/Report_Template.html" > /tmp/temp_report.html
+
+for table_var in PerDayTrafficSummaryTable PerHourTrafficDailyAverageTable HostDomainSummaryMessageDeliveryTable HostDomainSummaryMessagesReceived Sendersbymessagecount RecipientsbyMessageCount SendersbyMessageSize Recipientsbymessagesize Messageswithnosizedata MessageDeferralDetail MessageBounceDetailbyrelay MailWarnings MailFatalErrors; do
+  awk -v val="${!table_var}" '{gsub("\\${'"$table_var"'}", val); print}' /tmp/temp_report.html > /tmp/temp_report_new.html && mv /tmp/temp_report_new.html /tmp/temp_report.html
+done
+
+mv /tmp/temp_report.html "$HTMLOUTPUTDIR/data/$CURRENTYEAR-$CURRENTMONTH-$CURRENTDAY.html"
 
 #======================================================
 # Generate Dashboard Index
@@ -246,18 +252,18 @@ for filename in $HTMLOUTPUTDIR/data/[0-9]*.html; do
     filenameWithoutExtension="${filenameWithExtOnly%.*}"
  
     case $filenameWithExtOnly in
-        *Jan* ) echo "<a href=\"data/${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/jan_rpt.html ;;
-        *Feb* ) echo "<a href=\"data/${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/feb_rpt.html ;;
-        *Mar* ) echo "<a href=\"data/${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/mar_rpt.html ;;
-        *Apr* ) echo "<a href=\"data/${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/apr_rpt.html ;;
-        *May* ) echo "<a href=\"data/${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/may_rpt.html ;;
-        *Jun* ) echo "<a href=\"data/${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/jun_rpt.html ;;
-        *Jul* ) echo "<a href=\"data/${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/jul_rpt.html ;;
-        *Aug* ) echo "<a href=\"data/${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/aug_rpt.html ;;
-        *Sep* ) echo "<a href=\"data/${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/sep_rpt.html ;;
-        *Oct* ) echo "<a href=\"data/${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/oct_rpt.html ;;
-        *Nov* ) echo "<a href=\"data/${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/nov_rpt.html ;;
-        *Dec* ) echo "<a href=\"data/${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/dec_rpt.html ;;
+        *Jan* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/jan_rpt.html ;;
+        *Feb* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/feb_rpt.html ;;
+        *Mar* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/mar_rpt.html ;;
+        *Apr* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/apr_rpt.html ;;
+        *May* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/may_rpt.html ;;
+        *Jun* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/jun_rpt.html ;;
+        *Jul* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/jul_rpt.html ;;
+        *Aug* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/aug_rpt.html ;;
+        *Sep* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/sep_rpt.html ;;
+        *Oct* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/oct_rpt.html ;;
+        *Nov* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/nov_rpt.html ;;
+        *Dec* ) echo "<a href=\"${filenameWithoutExtension}.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/dec_rpt.html ;;
     esac  
 done
 

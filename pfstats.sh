@@ -36,6 +36,11 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
+# If a positional argument was provided and no -l/--logfile option supplied, use it as the log file
+if [[ -z "${CUSTOMLOG}" && $# -ge 1 ]]; then
+    CUSTOMLOG="$1"
+fi
+
 #Select Temporal
 if [[ -z "${CUSTOMMONTH}" ]]; then
     #If custom date is not set - default to current date e.g. 'Dec  9'
@@ -50,14 +55,15 @@ fi
 
 #Custom Log file(s)
 if [[ -z "${CUSTOMLOG}" ]]; then
-    LOGFILELOCATION="/var/log/maillog"
+    LOGFILELOCATION="/var/log/mail.log"
 else
-    LOGFILELOCATION=${CUSTOMLOG}
+    LOGFILELOCATION="${CUSTOMLOG}"
 fi
 
 #Test for a valid log file
-if ! ls $LOGFILELOCATION 1> /dev/null 2>&1; then
-    echo "Not a valid log file"; exit 1ß
+if ! ls "$LOGFILELOCATION" >/dev/null 2>&1; then
+    echo "Not a valid log file"
+    exit 1
 fi
 
 
@@ -68,36 +74,40 @@ CURRENTYEAR=$(date +'%Y')
 CURRENTMONTH=$(date +'%b')
 CURRENTDAY=$(date +'%e')
 
+# Also support ISO timestamps present in some logs (e.g. 2026-02-22)
+DATE_ISO=$(date +'%Y-%m-%d')
+
 
 #Get Counts
 
 
 Sent=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep  -c 'postfix/smtp.*status=sent' )
 Dfr=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep  -c 'postfix/smtp.*status=deferred' )
-Bnc=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep  -c 'postfix/smtp.*status=bounce' )
-RelayAccDnd=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep  -c 'postfix/smtp.*Relay access denied' )
-EnvelopeBlocked=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep  -c -E '*550.*Envelope blocked' )
+MATCH_DATE_EXPR="-e \"$LOGDATE\" -e \"$DATE_ISO\""
 
-greylist=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep  -c 'postfix/smtp.*[Gg]reylist' )
-Received=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep  -c 'postfix/smtpd.*client=' )
-Rejected=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep -c -oP 'rejected: \K.*' )
-SpamCount=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep -c 'status=sent.*spam' )
-MailVirus=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep -c -i 'infected' )
+Sent=$( eval grep -E $MATCH_DATE_EXPR "$LOGFILELOCATION" 2>/dev/null | grep -c 'postfix/smtp.*status=sent' )
+Dfr=$( eval grep -E $MATCH_DATE_EXPR "$LOGFILELOCATION" 2>/dev/null | grep -c 'postfix/smtp.*status=deferred' )
+Bnc=$( eval grep -E $MATCH_DATE_EXPR "$LOGFILELOCATION" 2>/dev/null | grep -c 'postfix/smtp.*status=bounce' )
+RelayAccDnd=$( eval grep -E $MATCH_DATE_EXPR "$LOGFILELOCATION" 2>/dev/null | grep -c 'postfix/smtp.*Relay access denied' )
+EnvelopeBlocked=$( eval grep -E $MATCH_DATE_EXPR "$LOGFILELOCATION" 2>/dev/null | grep -i -c '550.*Envelope blocked' )
 
-PREGREET=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep 'postfix/postscreen' | grep  -c 'PREGREET' )
-CONNECT=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep 'postfix/postscreen' | grep  -c 'CONNECT' )
-DISCONNECT=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep 'postfix/postscreen' | grep  -c 'DISCONNECT' )
-HANGUP=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep 'postfix/postscreen' | grep  -c 'HANGUP' )
-DNSBL=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep 'postfix/postscreen' | grep  -c 'DNSBL' )
-AccountLogins=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep  -c  'postfix/.*sasl_username' )
+greylist=$( eval grep -E $MATCH_DATE_EXPR "$LOGFILELOCATION" 2>/dev/null | grep -c 'postfix/smtp.*[Gg]reylist' )
+Received=$( eval grep -E $MATCH_DATE_EXPR "$LOGFILELOCATION" 2>/dev/null | grep -c 'postfix/smtpd.*client=' )
+Rejected=$( eval grep -E $MATCH_DATE_EXPR "$LOGFILELOCATION" 2>/dev/null | grep -c -oP 'rejected: \K.*' )
+SpamCount=$( eval grep -E $MATCH_DATE_EXPR "$LOGFILELOCATION" 2>/dev/null | grep -c 'status=sent.*spam' )
+MailVirus=$( eval grep -E $MATCH_DATE_EXPR "$LOGFILELOCATION" 2>/dev/null | grep -c -i 'infected' )
 
-warning=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep -c -i 'warning' )
-error=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep -c -i 'error' )
-fatal=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep -c -i 'fatal' )
-panic=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep -c -i 'panic' )
+PREGREET=$( eval grep -E $MATCH_DATE_EXPR "$LOGFILELOCATION" 2>/dev/null | grep 'postfix/postscreen' | grep -c 'PREGREET' )
+CONNECT=$( eval grep -E $MATCH_DATE_EXPR "$LOGFILELOCATION" 2>/dev/null | grep 'postfix/postscreen' | grep -c 'CONNECT' )
+DISCONNECT=$( eval grep -E $MATCH_DATE_EXPR "$LOGFILELOCATION" 2>/dev/null | grep 'postfix/postscreen' | grep -c 'DISCONNECT' )
+HANGUP=$( eval grep -E $MATCH_DATE_EXPR "$LOGFILELOCATION" 2>/dev/null | grep 'postfix/postscreen' | grep -c 'HANGUP' )
+DNSBL=$( eval grep -E $MATCH_DATE_EXPR "$LOGFILELOCATION" 2>/dev/null | grep 'postfix/postscreen' | grep -c 'DNSBL' )
+AccountLogins=$( eval grep -E $MATCH_DATE_EXPR "$LOGFILELOCATION" 2>/dev/null | grep -c 'postfix/.*sasl_username' )
 
-echo "Report Run       : $REPORTDATE"
-echo "Log Date Extract : $LOGDATE"
+warning=$( eval grep -E $MATCH_DATE_EXPR "$LOGFILELOCATION" 2>/dev/null | grep -c -i 'warning' )
+error=$( eval grep -E $MATCH_DATE_EXPR "$LOGFILELOCATION" 2>/dev/null | grep -c -i 'error' )
+fatal=$( eval grep -E $MATCH_DATE_EXPR "$LOGFILELOCATION" 2>/dev/null | grep -c -i 'fatal' )
+panic=$( eval grep -E $MATCH_DATE_EXPR "$LOGFILELOCATION" 2>/dev/null | grep -c -i 'panic' )
 
 echo '-------------------------------------------'
 echo "Total Messages Delivered    : $Sent"
