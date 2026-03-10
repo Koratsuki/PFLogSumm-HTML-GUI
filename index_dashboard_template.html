@@ -105,7 +105,7 @@
                     return;
                 }
                 
-                fetch(`data/${month}_rpt.html?t=` + Date.now())
+                fetch(`/data/${month}_rpt.html?t=` + Date.now())
                     .then(response => {
                         if (!response.ok) {
                             console.log(`No report file for ${month}`);

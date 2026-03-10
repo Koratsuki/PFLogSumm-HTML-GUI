@@ -197,18 +197,18 @@ for filename in $HTMLOUTPUTDIR/data/[0-9]*.html; do
     filenameWithExtOnly="${filename##*/}"
     filenameWithoutExtension="${filenameWithExtOnly%.*}"
     case $filenameWithExtOnly in
-        *Jan* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/jan_rpt.html ;;
-        *Feb* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/feb_rpt.html ;;
-        *Mar* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/mar_rpt.html ;;
-        *Apr* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/apr_rpt.html ;;
-        *May* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/may_rpt.html ;;
-        *Jun* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/jun_rpt.html ;;
-        *Jul* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/jul_rpt.html ;;
-        *Aug* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/aug_rpt.html ;;
-        *Sep* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/sep_rpt.html ;;
-        *Oct* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/oct_rpt.html ;;
-        *Nov* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/nov_rpt.html ;;
-        *Dec* ) echo "<a href=\"data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/dec_rpt.html ;;
+        *Jan* ) echo "<a href=\"/data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/jan_rpt.html ;;
+        *Feb* ) echo "<a href=\"/data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/feb_rpt.html ;;
+        *Mar* ) echo "<a href=\"/data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/mar_rpt.html ;;
+        *Apr* ) echo "<a href=\"/data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/apr_rpt.html ;;
+        *May* ) echo "<a href=\"/data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/may_rpt.html ;;
+        *Jun* ) echo "<a href=\"/data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/jun_rpt.html ;;
+        *Jul* ) echo "<a href=\"/data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/jul_rpt.html ;;
+        *Aug* ) echo "<a href=\"/data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/aug_rpt.html ;;
+        *Sep* ) echo "<a href=\"/data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/sep_rpt.html ;;
+        *Oct* ) echo "<a href=\"/data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/oct_rpt.html ;;
+        *Nov* ) echo "<a href=\"/data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/nov_rpt.html ;;
+        *Dec* ) echo "<a href=\"/data/$filenameWithoutExtension.html\" class=\"list-group-item list-group-item-action\">$filenameWithoutExtension</a>" >> $HTMLOUTPUTDIR/data/dec_rpt.html ;;
     esac  
 done
 
