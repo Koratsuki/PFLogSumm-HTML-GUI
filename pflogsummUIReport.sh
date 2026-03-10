@@ -90,24 +90,39 @@ sed -n '/^Fatal Errors/,/^Master daemon messages/p;/^Master daemon messages/q' /
 #======================================================
 # Extract Information into variables -> Grand Totals
 #======================================================
-export ReceivedEmail=$(awk '$2=="received" {print $1}'  /tmp/GrandTotals)
-export DeliveredEmail=$(awk '$2=="delivered" {print $1}'  /tmp/GrandTotals)
-export ForwardedEmail=$(awk '$2=="forwarded" {print $1}'  /tmp/GrandTotals)
-export DeferredEmailCount=$(awk '$2=="deferred" {print $1}'  /tmp/GrandTotals)
-export DeferredEmailDeferralsCount=$(awk '$2=="deferred" {print $3" "$4}'  /tmp/GrandTotals)
-export BouncedEmail=$(awk '$2=="bounced" {print $1}'  /tmp/GrandTotals)
-export RejectedEmailCount=$(awk '$2=="rejected" {print $1}'  /tmp/GrandTotals)
-export RejectedEmailPercentage=$(awk '$2=="rejected" {print $3}'  /tmp/GrandTotals)
-export RejectedWarningsEmail=$(sed 's/reject warnings/rejectwarnings/' /tmp/GrandTotals | awk '$2=="rejectwarnings" {print $1}')
-export HeldEmail=$(awk '$2=="held" {print $1}'  /tmp/GrandTotals)
-export DiscardedEmailCount=$(awk '$2=="discarded" {print $1}'  /tmp/GrandTotals)
-export DiscardedEmailPercentage=$(awk '$2=="discarded" {print $3}'  /tmp/GrandTotals)
-export BytesReceivedEmail=$(sed 's/bytes received/bytesreceived/' /tmp/GrandTotals | awk '$2=="bytesreceived" {print $1}'|sed 's/[^0-9]*//g' )
-export BytesDeliveredEmail=$(sed 's/bytes delivered/bytesdelivered/' /tmp/GrandTotals | awk '$2=="bytesdelivered" {print $1}'|sed 's/[^0-9]*//g')
-export SendersEmail=$(awk '$2=="senders" {print $1}'  /tmp/GrandTotals)
-export SendingHostsDomainsEmail=$(sed 's/sending hosts\/domains/sendinghostsdomains/' /tmp/GrandTotals | awk '$2=="sendinghostsdomains" {print $1}')
-export RecipientsEmail=$(awk '$2=="recipients" {print $1}'  /tmp/GrandTotals)
-export RecipientHostsDomainsEmail=$(sed 's/recipient hosts\/domains/recipienthostsdomains/' /tmp/GrandTotals | awk '$2=="recipienthostsdomains" {print $1}')
+value_or_default() {
+    local value="$1"
+    local fallback="$2"
+    if [ -n "$value" ]; then
+        printf '%s' "$value"
+    else
+        printf '%s' "$fallback"
+    fi
+}
+
+ReceivedEmail=$(value_or_default "$(awk '$2=="received" {print $1}' /tmp/GrandTotals)" "0")
+DeliveredEmail=$(value_or_default "$(awk '$2=="delivered" {print $1}' /tmp/GrandTotals)" "0")
+ForwardedEmail=$(value_or_default "$(awk '$2=="forwarded" {print $1}' /tmp/GrandTotals)" "0")
+DeferredEmailCount=$(value_or_default "$(awk '$2=="deferred" {print $1}' /tmp/GrandTotals)" "0")
+DeferredEmailDeferralsCount=$(value_or_default "$(awk '$2=="deferred" {print $3" "$4}' /tmp/GrandTotals)" "0")
+BouncedEmail=$(value_or_default "$(awk '$2=="bounced" {print $1}' /tmp/GrandTotals)" "0")
+RejectedEmailCount=$(value_or_default "$(awk '$2=="rejected" {print $1}' /tmp/GrandTotals)" "0")
+RejectedEmailPercentage=$(value_or_default "$(awk '$2=="rejected" {print $3}' /tmp/GrandTotals)" "(0%)")
+RejectedWarningsEmail=$(value_or_default "$(sed 's/reject warnings/rejectwarnings/' /tmp/GrandTotals | awk '$2=="rejectwarnings" {print $1}')" "0")
+HeldEmail=$(value_or_default "$(awk '$2=="held" {print $1}' /tmp/GrandTotals)" "0")
+DiscardedEmailCount=$(value_or_default "$(awk '$2=="discarded" {print $1}' /tmp/GrandTotals)" "0")
+DiscardedEmailPercentage=$(value_or_default "$(awk '$2=="discarded" {print $3}' /tmp/GrandTotals)" "(0%)")
+BytesReceivedEmail=$(value_or_default "$(sed 's/bytes received/bytesreceived/' /tmp/GrandTotals | awk '$2=="bytesreceived" {print $1}')" "0")
+BytesDeliveredEmail=$(value_or_default "$(sed 's/bytes delivered/bytesdelivered/' /tmp/GrandTotals | awk '$2=="bytesdelivered" {print $1}')" "0")
+SendersEmail=$(value_or_default "$(awk '$2=="senders" {print $1}' /tmp/GrandTotals)" "0")
+SendingHostsDomainsEmail=$(value_or_default "$(sed 's/sending hosts\/domains/sendinghostsdomains/' /tmp/GrandTotals | awk '$2=="sendinghostsdomains" {print $1}')" "0")
+RecipientsEmail=$(value_or_default "$(awk '$2=="recipients" {print $1}' /tmp/GrandTotals)" "0")
+RecipientHostsDomainsEmail=$(value_or_default "$(sed 's/recipient hosts\/domains/recipienthostsdomains/' /tmp/GrandTotals | awk '$2=="recipienthostsdomains" {print $1}')" "0")
+
+export ReceivedEmail DeliveredEmail ForwardedEmail DeferredEmailCount DeferredEmailDeferralsCount
+export BouncedEmail RejectedEmailCount RejectedEmailPercentage RejectedWarningsEmail HeldEmail
+export DiscardedEmailCount DiscardedEmailPercentage BytesReceivedEmail BytesDeliveredEmail
+export SendersEmail SendingHostsDomainsEmail RecipientsEmail RecipientHostsDomainsEmail
 
 #======================================================
 # Process Tables into HTML Rows

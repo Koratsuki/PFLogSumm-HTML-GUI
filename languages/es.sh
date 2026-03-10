@@ -40,6 +40,7 @@ L_BYTES_DELIVERED="Bytes Entregados"
 L_MAIL_SENDERS="Remitentes"
 L_SENDING_HOSTS="Hosts/Dominios Remitentes"
 L_MAIL_RECIPIENTS="Destinatarios"
+L_RECIPIENT_HOSTS="Hosts/Dominios Destino"
 
 L_GRAPHS="Gráficos"
 L_PER_DAY_TRAFFIC="Resumen de Tráfico por Día"

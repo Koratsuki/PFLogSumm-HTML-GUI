@@ -137,7 +137,7 @@
             <div class="col-6 col-md-2">
                 <div class="card p-3 stat-card bg-secondary text-white">
                     <div class="stat-value counter">${RejectedWarningsEmail}</div>
-                    <div class="stat-label">${L_REJECTED_WARNING} (${RejectedEmailPercentage})</div>
+                    <div class="stat-label">${L_REJECTED_WARNING}</div>
                 </div>
             </div>
         </div>
@@ -172,6 +172,34 @@
                 <div class="card p-3 stat-card bg-success text-white bg-opacity-75">
                     <div class="stat-value">${BytesDeliveredEmail}</div>
                     <div class="stat-label">${L_BYTES_DELIVERED}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metric Grid Row 3 -->
+        <div class="row g-3 mb-5 text-center justify-content-center">
+            <div class="col-6 col-md-3">
+                <div class="card p-3 stat-card bg-light text-dark">
+                    <div class="stat-value counter">${SendersEmail}</div>
+                    <div class="stat-label">${L_MAIL_SENDERS}</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card p-3 stat-card bg-light text-dark">
+                    <div class="stat-value counter">${SendingHostsDomainsEmail}</div>
+                    <div class="stat-label">${L_SENDING_HOSTS}</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card p-3 stat-card bg-light text-dark">
+                    <div class="stat-value counter">${RecipientsEmail}</div>
+                    <div class="stat-label">${L_MAIL_RECIPIENTS}</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card p-3 stat-card bg-light text-dark">
+                    <div class="stat-value counter">${RecipientHostsDomainsEmail}</div>
+                    <div class="stat-label">${L_RECIPIENT_HOSTS}</div>
                 </div>
             </div>
         </div>
@@ -251,6 +279,35 @@
                 </div>
             </div>
 
+            <!-- Host/Domain Delivery -->
+            <div class="accordion-item mb-3 border-0 shadow-sm rounded">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed rounded" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseHostDelivery">
+                        <i class="fa-solid fa-truck-fast me-2"></i>${L_HOST_DOMAIN_DELIVERY}
+                    </button>
+                </h2>
+                <div id="collapseHostDelivery" class="accordion-collapse collapse" data-bs-parent="#reportAccordion">
+                    <div class="accordion-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>${L_H_MSG_COUNT}</th>
+                                        <th>${L_H_BYTES}</th>
+                                        <th>${L_H_HOST_DOMAIN}</th>
+                                        <th>${L_H_SENT_COUNT}</th>
+                                        <th>${L_H_DEFERS}</th>
+                                        <th>${L_H_AVG_DAILY}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${HostDomainSummaryMessageDeliveryTable}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Host/Domain Received -->
             <div class="accordion-item mb-3 border-0 shadow-sm rounded">
                 <h2 class="accordion-header">
@@ -321,6 +378,81 @@
                                     </tr>
                                 </thead>
                                 <tbody>${RecipientsbyMessageCount}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Senders by Size -->
+            <div class="accordion-item mb-3 border-0 shadow-sm rounded">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed rounded" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseSenderSize">
+                        <i class="fa-solid fa-scale-balanced me-2"></i>${L_SENDERS_BY_SIZE}
+                    </button>
+                </h2>
+                <div id="collapseSenderSize" class="accordion-collapse collapse" data-bs-parent="#reportAccordion">
+                    <div class="accordion-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>${L_H_SIZE}</th>
+                                        <th>${L_H_SENDER}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${SendersbyMessageSize}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recipients by Size -->
+            <div class="accordion-item mb-3 border-0 shadow-sm rounded">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed rounded" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseRecipSize">
+                        <i class="fa-solid fa-weight-hanging me-2"></i>${L_RECIPIENTS_BY_SIZE}
+                    </button>
+                </h2>
+                <div id="collapseRecipSize" class="accordion-collapse collapse" data-bs-parent="#reportAccordion">
+                    <div class="accordion-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>${L_H_SIZE}</th>
+                                        <th>${L_H_RECIPIENT}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${Recipientsbymessagesize}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Messages with no size data -->
+            <div class="accordion-item mb-3 border-0 shadow-sm rounded">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed rounded" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseNoSizeData">
+                        <i class="fa-solid fa-ban me-2"></i>${L_NO_SIZE_DATA}
+                    </button>
+                </h2>
+                <div id="collapseNoSizeData" class="accordion-collapse collapse" data-bs-parent="#reportAccordion">
+                    <div class="accordion-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>${L_H_QUEUE_ID}</th>
+                                        <th>${L_H_EMAIL_ADDR}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${Messageswithnosizedata}</tbody>
                             </table>
                         </div>
                     </div>
