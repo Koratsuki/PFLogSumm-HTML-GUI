@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # Debug option - should be disabled unless required
 #set -x
 
@@ -57,7 +58,7 @@ fi
 
 #Test for a valid log file
 if ! ls $LOGFILELOCATION 1> /dev/null 2>&1; then
-    echo "Not a valid log file"; exit 1ß
+    echo "Not a valid log file" >&2; exit 1
 fi
 
 
@@ -127,35 +128,4 @@ echo "Postfix Panic               : $panic"
 
 echo
 
-
-
-
 exit 0
-
-
- #if ($l =~ m/status=bounced/i) {$rBnc++;}
- if ($l =~ m/postfix\/pickup/i) {
-  if ($l =~ m/uid=|sender=/) {$rRcv++;}
-  }
- if ($l =~ m/client=/i) {$rRcv++;}
- if ($l =~ m/reject:/i) {$rRjc++;}
- if ($l =~ m/hold:/i) {$rHld++;}
- if ($l =~ m/discard:/i) {$rDsc++;}
- }
-
-#print "Message.Delivered: Total delivered messages: $rDlv\n";
-#print "Statistic.Delivered: $rDlv\n";
-print "Message.Forwarded: Total forwarded messages: $rFwd\n";
-print "Statistic.Forwarded: $rFwd\n";
-print "Message.Rejected: Total rejected messages: $rRjc\n";
-print "Statistic.Rejected: $rRjc\n";
-print "Message.Received: Total received messages: $rRcv\n";
-print "Statistic.Received: $rRcv\n";
-print "Message.Discarded: Total discarded messages: $rDsc\n";
-print "Statistic.Discarded: $rDsc\n";
-#print "Message.Deferred: Total deferred messages: $rDfr\n";
-#print "Statistic.Deferred: $rDfr\n";
-print "Message.Bounced: Total bounced messages: $rBnc\n";
-print "Statistic.Bounced: $rBnc\n";
-print "Message.Held: Total held messages: $rHld\n";
-print "Statistic.Held: $rHld\n";

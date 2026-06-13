@@ -2,17 +2,21 @@
 
 A modern, responsive Bash shell script that generates beautiful Postfix statistics HTML reports using `pflogsumm` as the backend.
 
-The tool refines raw `pflogsumm` output into a premium, interactive dashboard with dynamic graphs, multi-language support, and a mobile-friendly interface.
+The tool refines raw `pflogsumm` output into a premium, interactive dashboard with dynamic graphs, multi-language support, dark mode, table search, CSV export, and a mobile-friendly interface.
 
-## 🚀 Key Features
+## Key Features
 
-- **Modern UI**: Powered by **Bootstrap 5**, providing a sleek, responsive dashboard and detailed report views.
-- **Interactive Graphs**: Visualizes traffic trends (Per-Day and Per-Hour) using **Highcharts**.
+- **Modern UI**: Powered by **Bootstrap 5**, providing a sleek, responsive dashboard and detailed report views with automatic dark mode.
+- **Interactive Graphs**: Visualizes traffic trends (Per-Day and Per-Hour) and email distribution using **Chart.js** (MIT license).
 - **Multi-Language (i18n)**: Fully supports **English** and **Spanish** out of the box. Easily extendable to other languages.
-- **Dynamic Dashboard**: Auto-generates a monthly overview for quick navigation between reports.
-- **Lightweight & Portable**: Orchestrated entirely in Bash, using external templates for easy maintenance.
+- **Dynamic Dashboard**: Auto-generates a monthly overview with loading indicators and error handling for quick navigation between reports.
+- **Table Search & CSV Export**: Filter large tables (senders, recipients, host/domain) in real-time and export any table as CSV.
+- **Security**: Content-Security-Policy headers, Subresource Integrity (SRI) on all CDN assets, and HTML escaping to prevent XSS.
+- **Modular Architecture**: Functionality split into `lib/logging.sh`, `lib/extract.sh`, and `lib/render.sh` for maintainability.
+- **Docker-Ready**: Pre-configured with non-root user, healthchecks, and automatic daily report regeneration via cron.
+- **Lightweight & Portable**: Orchestrated entirely in Bash, using `envsubst` for template rendering.
 
-## 📸 Screenshots
+## Screenshots
 
 ![Dashboard Overview](Screenshot1.png)
 *Modern Dashboard with Monthly Report Navigation*
@@ -20,7 +24,7 @@ The tool refines raw `pflogsumm` output into a premium, interactive dashboard wi
 ![Detailed Report](Screenshot2.png)
 *Detailed Statistics with Status Cards and Interactive Graphs*
 
-## 🛠 Requirements
+## Requirements
 
 - **pflogsumm**: The primary backend for log analysis.
 - **envsubst**: Used for template variable replacement (usually part of `gettext-base` or `gettext`).
@@ -38,7 +42,7 @@ apt-get update
 apt-get -y install pflogsumm gettext-base
 ```
 
-## 📥 Project Installation
+## Project Installation
 
 Clone the repository to a location of your choice:
 
@@ -46,6 +50,8 @@ Clone the repository to a location of your choice:
 cd /opt
 git clone https://github.com/RiaanPretoriusSA/PFLogSumm-HTML-GUI.git
 ```
+
+The script auto-detects its installation directory — no manual `SCRIPTDIR` configuration needed.
 
 ### Keeping it Updated
 
@@ -56,7 +62,26 @@ cd /opt/PFLogSumm-HTML-GUI
 git pull
 ```
 
-## ⚙️ Configuration
+## Project Structure
+
+```
+PFLogSumm-HTML-GUI/
+├── pflogsummUIReport.sh     # Main entry point (orchestrator)
+├── pfstats.sh               # Quick CLI stats utility
+├── lib/
+│   ├── logging.sh           # Logging with timestamps and levels
+│   ├── extract.sh           # Section extraction and HTML table generation
+│   └── render.sh            # Template rendering and dashboard building
+├── languages/
+│   ├── en.sh                # English translations
+│   └── es.sh                # Spanish translations
+├── Report_Template.html     # Detailed report HTML template
+├── index_dashboard_template.html  # Dashboard index HTML template
+├── Dockerfile               # Container build file
+└── docker-compose.yml       # Container orchestration
+```
+
+## Configuration
 
 The script uses a configuration file located at `/etc/pflogsumui.conf`. Running the script for the first time will automatically generate a default configuration if it does not exist.
 
@@ -83,6 +108,8 @@ SCRIPTDIR="/opt/PFLogSumm-HTML-GUI"
 LANGUAGE="en"
 ```
 
+> **Note**: `SCRIPTDIR` is auto-detected from the script's location. You only need to set it in the config if the auto-detection fails (e.g., in unusual system configurations).
+
 ### Internationalization (i18n)
 
 The tool supports multiple languages. Language files are stored in the `languages/` directory.
@@ -101,9 +128,12 @@ LANGUAGE=en /opt/PFLogSumm-HTML-GUI/pflogsummUIReport.sh
 > [!NOTE]
 > If `LANGUAGE` is explicitly set in `/etc/pflogsumui.conf`, it will overwrite the command-line environment variable. To allow command-line overrides, ensure the `LANGUAGE` line in the config file is commented out or removed.
 > [!TIP]
-> To add a new language, copy `languages/en.sh` to a new file (e.g., `languages/fr.sh`) and translate the definitions.
+> To add a new language, copy `languages/en.sh` to a new file (e.g., `languages/fr.sh`) and translate the definitions. The following keys should be translated:
+> - Month names (L_JAN through L_DEC)
+> - UI strings (dashboard, report, table headers)
+> - Search and CSV labels (L_SEARCH, L_EXPORT_CSV)
 
-## ⏲️ Automation (Crontab)
+## Automation (Crontab)
 
 To keep your dashboard up to date, schedule the script to run daily via Cron. Since `pflogsumm` usually reports on the current day's logs, running it just before midnight is recommended.
 
@@ -115,12 +145,63 @@ To keep your dashboard up to date, schedule the script to run daily via Cron. Si
 50 23 * * * /opt/PFLogSumm-HTML-GUI/pflogsummUIReport.sh >/dev/null 2>&1
 ```
 
-## 🛡️ Security Note
+## Docker
+
+A Dockerfile and docker-compose.yml are provided for containerized deployment.
+
+### Building and Running
+
+```bash
+docker-compose up -d
+```
+
+This starts an Apache web server on port 8080 serving the generated reports. The container includes:
+
+- **Non-root user** (`pflogsumm`) for report generation
+- **Cron** configured to regenerate reports daily at 11:50 PM
+- **Healthcheck** that verifies Apache is responding every 30 seconds
+- **Auto-restart** via `restart: unless-stopped`
+
+### Configuration
+
+Mount your Postfix mail log to `/var/log/mail.log` in the container:
+
+```yaml
+volumes:
+  - /var/log/mail.log:/var/log/mail.log
+```
+
+Set `REGENERATE_REPORTS=true` to force report generation on every container start.
+
+## Security
 
 > [!WARNING]
 > The generated reports expose end-user email addresses. **You MUST password-protect the directory** where these files are hosted (e.g., using `.htaccess` or your web server's authentication mechanism).
 
-## 🏢 Zimbra Integration
+Additional security measures implemented:
+
+- **Content-Security-Policy (CSP)**: Both templates include CSP meta tags restricting scripts and styles to known CDN origins.
+- **Subresource Integrity (SRI)**: All CDN-loaded assets include `integrity` hashes to prevent tampering.
+- **HTML Escaping**: All dynamic table values are HTML-escaped to prevent XSS attacks.
+- **Non-root Container**: The Docker container runs report generation as an unprivileged user.
+
+## Logging
+
+The script outputs timestamped log messages at three levels:
+
+| Level | Prefix | Output |
+|---|---|---|
+| INFO | `[timestamp] [INFO]` | stdout (default) |
+| WARN | `[timestamp] [WARN]` | stderr |
+| ERROR | `[timestamp] [ERROR]` | stderr |
+
+To suppress INFO messages:
+
+```bash
+LOG_LEVEL=1 ./pflogsummUIReport.sh
+```
+
+## Zimbra Integration
 
 If you are using Zimbra, it includes its own `pflogsumm` version. You can point the script to it by creating a symlink:
 
@@ -129,4 +210,5 @@ ln -s /opt/zimbra/common/bin/pflogsumm.pl /usr/sbin/pflogsumm
 ```
 
 ---
+
 *Created by [Riaan Pretorius](mailto:pretorius.riaan@gmail.com). Modernized and enhanced by the community.*

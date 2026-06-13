@@ -5,6 +5,8 @@ L_LAST_UPDATE="Última Actualización"
 L_SERVER="Servidor"
 L_VIEW_REPORTS="Ver Reportes"
 L_REPORT_COUNT="Total de Reportes"
+L_NO_REPORTS="Sin reportes este mes"
+L_LOAD_ERROR="Error al cargar reportes"
 L_COPYRIGHT_POWERED="Desarrollado con"
 
 # Nombres de Meses
@@ -53,6 +55,7 @@ L_RECIPIENTS_BY_SIZE="Destinatarios por Tamaño de Mensaje"
 L_NO_SIZE_DATA="Mensajes sin datos de tamaño"
 L_DEFERRAL_DETAIL="Detalle de Mensajes Diferidos"
 L_BOUNCE_DETAIL="Detalle de Rebotes (Por Relay)"
+L_MAIL_DISTRIBUTION="Distribución de Correo"
 L_MAIL_WARNINGS="Advertencias de Correo"
 L_MAIL_FATAL_ERRORS="Errores Fatales de Correo"
 
@@ -76,3 +79,7 @@ L_H_AVG_DAILY="Promedio Diario"
 L_H_MAX_DAILY="Máximo Diario"
 L_H_QUEUE_ID="ID de Cola"
 L_H_EMAIL_ADDR="Dirección de Correo"
+
+# UI
+L_SEARCH="Buscar..."
+L_EXPORT_CSV="Exportar como CSV"

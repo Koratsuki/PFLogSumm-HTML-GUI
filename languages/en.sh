@@ -5,6 +5,8 @@ L_LAST_UPDATE="Last Update"
 L_SERVER="Server"
 L_VIEW_REPORTS="View Reports"
 L_REPORT_COUNT="Report Count"
+L_NO_REPORTS="No reports for this month"
+L_LOAD_ERROR="Failed to load reports"
 L_COPYRIGHT_POWERED="Powered by"
 
 # Month Names
@@ -53,6 +55,7 @@ L_RECIPIENTS_BY_SIZE="Recipients by Message Size"
 L_NO_SIZE_DATA="Messages with no size data"
 L_DEFERRAL_DETAIL="Message Deferral Detail"
 L_BOUNCE_DETAIL="Message Bounce Detail (By Relay)"
+L_MAIL_DISTRIBUTION="Mail Distribution"
 L_MAIL_WARNINGS="Mail Warnings"
 L_MAIL_FATAL_ERRORS="Mail Fatal Errors"
 
@@ -76,3 +79,7 @@ L_H_AVG_DAILY="Average Daily"
 L_H_MAX_DAILY="Maximum Daily"
 L_H_QUEUE_ID="Queue ID"
 L_H_EMAIL_ADDR="Email Address"
+
+# UI
+L_SEARCH="Search..."
+L_EXPORT_CSV="Export as CSV"

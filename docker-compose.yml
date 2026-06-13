@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   pflogsumm-gui:
     build: .
@@ -13,3 +11,12 @@ services:
     environment:
       # Opcional: configurar idioma
       - LANGUAGE=en
+      # Forzar regeneración de reportes al iniciar
+      - REGENERATE_REPORTS=true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

@@ -6,23 +6,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="Postfix PFLOGSUMM Dashboard Index">
     <meta name="author" content="Riaan Pretorius">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data: https://www.postfix.org; connect-src 'self'">
     <link rel="icon" href="https://www.postfix.org/favicon.ico">
 
     <title>${L_DASHBOARD_TITLE}</title>
 
     <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous">
 
     <style>
         :root {
             --primary-color: #0d6efd;
             --dark-bg: #212529;
+            --bg-body: #f8f9fa;
+            --text-body: #212529;
+            --card-bg: #fff;
+            --border-color: #dee2e6;
+            --footer-bg: #212529;
+            --footer-text: rgba(255,255,255,.5);
         }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-body: #1a1a2e;
+                --text-body: #e0e0e0;
+                --card-bg: #16213e;
+                --border-color: #2a2a4a;
+                --dark-bg: #0a0a1a;
+                --footer-bg: #0a0a1a;
+                --footer-text: rgba(255,255,255,.4);
+            }
+            .navbar { background-color: var(--dark-bg) !important; }
+            .card { background-color: var(--card-bg); }
+            .card-body { color: var(--text-body); }
+            .list-group-item { background-color: var(--card-bg); color: var(--text-body); border-color: var(--border-color); }
+            .list-group-item:hover { background-color: #1a1a3e; }
+            .border-bottom { border-color: var(--border-color) !important; }
+        }
+
         body {
             padding-top: 4.5rem;
-            background-color: #f8f9fa;
+            background-color: var(--bg-body);
+            color: var(--text-body);
         }
         .navbar {
             box-shadow: 0 2px 4px rgba(0,0,0,.1);
@@ -43,17 +70,33 @@
             padding-bottom: 0.5rem;
         }
         footer {
-            background-color: var(--dark-bg);
-            color: rgba(255,255,255,.5);
+            background-color: var(--footer-bg);
+            color: var(--footer-text);
             padding: 2rem 0;
             margin-top: 3rem;
         }
         .report-link {
             text-decoration: none;
-            color: var(--dark-bg);
+            color: var(--text-body);
         }
         .report-link:hover {
             color: var(--primary-color);
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid var(--primary-color);
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .load-error {
+            color: #dc3545;
+            font-size: 0.8rem;
         }
     </style>
 </head>
@@ -76,7 +119,6 @@
         </div>
 
         <div class="row g-4">
-            <!-- Months Loop mapping -->
             $MONTH_CARDS
         </div>
     </div>
@@ -88,16 +130,42 @@
     </footer>
 
     <!-- Bootstrap 5 JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
 
     <script>
-        document.getElementById('current-year').textContent = new Date().getFullYear();
-        
-        $(document).ready(function () {
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('current-year').textContent = new Date().getFullYear();
+
             const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+
             months.forEach(month => {
-                $(`.${month}List`).load(`data/${month}_rpt.html?rnd=` + Math.random());
+                const list = document.querySelector(`.${month}List`);
+                if (!list) return;
+
+                // Show loading spinner
+                const spinner = document.createElement('div');
+                spinner.className = 'text-center py-2';
+                spinner.innerHTML = '<div class="loading-spinner"></div>';
+                list.appendChild(spinner);
+
+                fetch(`data/${month}_rpt.html?rnd=${Math.random()}`)
+                    .then(res => {
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        return res.text();
+                    })
+                    .then(html => {
+                        // Remove spinner
+                        spinner.remove();
+                        if (html.trim()) {
+                            list.innerHTML = html;
+                        } else {
+                            list.innerHTML = '<div class="text-muted small text-center">${L_NO_REPORTS}</div>';
+                        }
+                    })
+                    .catch(err => {
+                        spinner.remove();
+                        list.innerHTML = `<div class="load-error text-center"><i class="fa-solid fa-triangle-exclamation me-1"></i>${L_LOAD_ERROR}</div>`;
+                    });
             });
         });
     </script>

@@ -1,21 +1,22 @@
-# Usar Ubuntu como base
-FROM ubuntu:latest
+FROM debian:bookworm-slim
 
 # Instalar dependencias
 RUN apt-get update && apt-get install -y \
     pflogsumm \
     gettext-base \
     apache2 \
+    cron \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiar el proyecto al contenedor
-COPY . /opt/PFLogSumm-HTML-GUI
+# Crear usuario no-root para generación de reportes
+RUN useradd -r -m -d /opt/PFLogSumm-HTML-GUI -s /usr/sbin/nologin pflogsumm
 
 # Crear directorios necesarios
-RUN mkdir -p /var/www/html/data
+RUN mkdir -p /var/www/html/data /etc
 
 # Crear el archivo de configuración con rutas correctas para el contenedor
-RUN mkdir -p /etc && tee /etc/pflogsumui.conf > /dev/null <<EOF
+RUN tee /etc/pflogsumui.conf > /dev/null <<EOF
 #PFLOGSUMUI CONFIG
 
 ##  Postfix Log Location
@@ -34,31 +35,45 @@ HTMLOUTPUT_INDEXDASHBOARD="index.html"
 LANGUAGE="en"
 EOF
 
-# Copiar el archivo de log de ejemplo (asumiendo que mail.log está en el directorio del proyecto)
-# Si no existe, crear uno vacío para pruebas
-RUN cp /opt/PFLogSumm-HTML-GUI/mail.log /var/log/mail.log 2>/dev/null || touch /var/log/mail.log
+# Copiar el proyecto (primero scripts, luego templates para cache óptimo)
+COPY lib/ /opt/PFLogSumm-HTML-GUI/lib/
+COPY languages/ /opt/PFLogSumm-HTML-GUI/languages/
+COPY *.sh *.html /opt/PFLogSumm-HTML-GUI/
 
-# Ejecutar el script para generar los reportes
-RUN cd /opt/PFLogSumm-HTML-GUI && ./pflogsummUIReport.sh
+# Asignar permisos
+RUN chown -R pflogsumm:pflogsumm /opt/PFLogSumm-HTML-GUI && \
+    chown -R pflogsumm:pflogsumm /var/www/html && \
+    chmod -R 755 /var/www/html
 
-# Configurar permisos
-RUN chmod -R 755 /var/www/html
+# Crear archivo de log vacío (será reemplazado por volumen en producción)
+RUN touch /var/log/mail.log && chown pflogsumm:pflogsumm /var/log/mail.log
+
+# Configurar cron para regenerar reportes diariamente a las 23:50
+RUN echo "50 23 * * * pflogsumm /opt/PFLogSumm-HTML-GUI/pflogsummUIReport.sh >/dev/null 2>&1" > /etc/cron.d/pflogsumm && \
+    chmod 0644 /etc/cron.d/pflogsumm
 
 # Exponer el puerto 80 para Apache
 EXPOSE 80
+
+# Healthcheck: verificar que Apache responde
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost/ || exit 1
 
 # Script de inicio
 COPY <<'EOF' /entrypoint.sh
 #!/bin/bash
 set -e
 
-# Regenerar reportes si es necesario
-if [ ! -f /var/www/html/index.html ] || [ "$REGENERATE_REPORTS" = "true" ]; then
+# Iniciar cron daemon en background
+service cron start
+
+# Regenerar reportes al iniciar como usuario no-root
+if [ ! -f /var/www/html/index.html ] || [ "${REGENERATE_REPORTS:-false}" = "true" ]; then
     echo "Generating reports..."
-    cd /opt/PFLogSumm-HTML-GUI && ./pflogsummUIReport.sh
+    su -s /bin/bash -c '/opt/PFLogSumm-HTML-GUI/pflogsummUIReport.sh' pflogsumm
 fi
 
-# Iniciar Apache
+# Iniciar Apache en foreground (Apache dropea privilegios internamente)
 exec apache2ctl -D FOREGROUND
 EOF
 
