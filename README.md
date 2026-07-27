@@ -15,6 +15,7 @@ The tool refines raw `pflogsumm` output into a premium, interactive dashboard wi
 - **Modular Architecture**: Functionality split into `lib/logging.sh`, `lib/extract.sh`, and `lib/render.sh` for maintainability.
 - **Docker-Ready**: Pre-configured with non-root user, healthchecks, and automatic daily report regeneration via cron.
 - **Lightweight & Portable**: Orchestrated entirely in Bash, using `envsubst` for template rendering.
+- **Distribution-Aware Log Detection**: Automatically detects whether your system uses `/var/log/maillog` (Red Hat family) or `/var/log/mail.log` (Debian family) — no manual path configuration needed. Falls back gracefully with auto-detection on first run and at validation time.
 
 ## Screenshots
 
@@ -69,6 +70,7 @@ PFLogSumm-HTML-GUI/
 ├── pflogsummUIReport.sh     # Main entry point (orchestrator)
 ├── pfstats.sh               # Quick CLI stats utility
 ├── lib/
+│   ├── detect.sh            # Distribution-aware mail log detection
 │   ├── logging.sh           # Logging with timestamps and levels
 │   ├── extract.sh           # Section extraction and HTML table generation
 │   └── render.sh            # Template rendering and dashboard building
@@ -84,6 +86,20 @@ PFLogSumm-HTML-GUI/
 ## Configuration
 
 The script uses a configuration file located at `/etc/pflogsumui.conf`. Running the script for the first time will automatically generate a default configuration if it does not exist.
+
+### Automatic Log Path Detection
+
+The mail log path is automatically detected based on your distribution:
+
+| Distribution Family | Detected Path |
+|---|---|
+| Red Hat (RHEL, CentOS, Fedora, Rocky, AlmaLinux) | `/var/log/maillog` |
+| Debian (Debian, Ubuntu) | `/var/log/mail.log` |
+
+The detection logic (`lib/detect.sh`) works in three steps:
+1. **Check existing files** — if `/var/log/maillog` or `/var/log/mail.log` already exists, that path is used.
+2. **Read `/etc/os-release`** — identifies the distribution family when no log file exists yet.
+3. **Fallback to legacy files** — checks `/etc/redhat-release`, `/etc/debian_version`, etc.
 
 ### Example Configuration (`/etc/pflogsumui.conf`)
 
@@ -109,6 +125,7 @@ LANGUAGE="en"
 ```
 
 > **Note**: `SCRIPTDIR` is auto-detected from the script's location. You only need to set it in the config if the auto-detection fails (e.g., in unusual system configurations).
+> **Note**: `LOGFILELOCATION` is auto-detected during first-run config generation and re-detected at runtime if the configured path does not exist.
 
 ### Internationalization (i18n)
 
