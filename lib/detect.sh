@@ -19,3 +19,13 @@ detect_mail_log() {
         echo "/var/log/mail.log"
     fi
 }
+
+detect_pflogsumm() {
+    for path in "/usr/sbin/pflogsumm" "/usr/bin/pflogsumm" "/usr/sbin/pflogsumm.pl" "/usr/bin/pflogsumm.pl"; do
+        if [ -x "$path" ]; then
+            echo "$path"
+            return
+        fi
+    done
+    command -v pflogsumm 2>/dev/null || echo "/usr/sbin/pflogsumm"
+}

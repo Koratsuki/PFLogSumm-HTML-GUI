@@ -101,6 +101,8 @@ The detection logic (`lib/detect.sh`) works in three steps:
 2. **Read `/etc/os-release`** — identifies the distribution family when no log file exists yet.
 3. **Fallback to legacy files** — checks `/etc/redhat-release`, `/etc/debian_version`, etc.
 
+The `pflogsumm` binary path is also auto-detected, searching common locations (`/usr/sbin/pflogsumm`, `/usr/bin/pflogsumm`, `.pl` variants) and falling back to `command -v`.
+
 ### Example Configuration (`/etc/pflogsumui.conf`)
 
 ```bash
