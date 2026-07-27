@@ -12,6 +12,7 @@ SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Source library modules
 . "${SCRIPTDIR}/lib/logging.sh"
+. "${SCRIPTDIR}/lib/detect.sh"
 . "${SCRIPTDIR}/lib/extract.sh"
 . "${SCRIPTDIR}/lib/render.sh"
 
@@ -24,11 +25,12 @@ CONFIG_FILE="${PFSYSCONFDIR}/pflogsumui.conf"
 #Create Blank Config File if it does not exist
 if [ ! -f "$CONFIG_FILE" ]; then
     log_info "Creating default configuration at $CONFIG_FILE"
+    DETECTED_LOG=$(detect_mail_log)
     tee "$CONFIG_FILE" <<EOF
 #PFLOGSUMUI CONFIG
 
 ##  Postfix Log Location
-LOGFILELOCATION="/var/log/maillog"
+LOGFILELOCATION="${DETECTED_LOG}"
 
 ##  pflogsumm details
 ##  NOTE: DONT USE -d today - breaks the script
@@ -84,8 +86,16 @@ CURRENTDAY=$(date +"%e")
 log_info "Validating configuration..."
 
 if [ ! -f "$LOGFILELOCATION" ]; then
-    log_error "Log file not found: $LOGFILELOCATION"
-    exit 1
+    log_warn "Log file not found: $LOGFILELOCATION"
+    DETECTED_LOG=$(detect_mail_log)
+    if [ "$DETECTED_LOG" != "$LOGFILELOCATION" ] && [ -f "$DETECTED_LOG" ]; then
+        log_info "Auto-detected mail log: $DETECTED_LOG"
+        LOGFILELOCATION="$DETECTED_LOG"
+    else
+        log_error "No mail log found at $LOGFILELOCATION or $DETECTED_LOG"
+        log_error "Please set LOGFILELOCATION in $CONFIG_FILE"
+        exit 1
+    fi
 fi
 
 PFLOGSUMM_BIN="${PFLOGSUMMBIN%% *}"
