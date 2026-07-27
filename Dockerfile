@@ -28,7 +28,7 @@ PFLOGSUMMOPTIONS=" --verbose_msg_detail --zero_fill "
 PFLOGSUMMBIN="/usr/sbin/pflogsumm  "
 
 ##  HTML Output
-HTMLOUTPUTDIR="/var/www/html/"
+HTMLOUTPUTDIR="/var/www/html"
 HTMLOUTPUT_INDEXDASHBOARD="index.html"
 
 ## Language (en or es)
