@@ -10,10 +10,52 @@ set -euo pipefail
 
 SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+if [ -w /var/log ] || [ "$(id -u)" -eq 0 ]; then
+    REPORT_LOG="${REPORT_LOG:-/var/log/pflogsummUIReport.log}"
+else
+    REPORT_LOG="${REPORT_LOG:-${TMPDIR:-/tmp}/pflogsummUIReport.log}"
+fi
+
 # Source library modules
 . "${SCRIPTDIR}/lib/logging.sh"
+. "${SCRIPTDIR}/lib/detect.sh"
 . "${SCRIPTDIR}/lib/extract.sh"
 . "${SCRIPTDIR}/lib/render.sh"
+
+report_error_trap() {
+    local exit_code=$?
+    log_error "Command failed (exit ${exit_code}) at line ${BASH_LINENO[0]}: ${BASH_COMMAND}"
+    return "$exit_code"
+}
+
+trap report_error_trap ERR
+exec 3>>"$REPORT_LOG"
+log_info() {
+    if [ "$LOG_LEVEL" -le "$LOG_LEVEL_INFO" ]; then
+        local message
+        message="[$(date '+%Y-%m-%d %H:%M:%S')] [INFO] $*"
+        echo "$message"
+        echo "$message" >&3
+    fi
+}
+
+log_warn() {
+    if [ "$LOG_LEVEL" -le "$LOG_LEVEL_WARN" ]; then
+        local message
+        message="[$(date '+%Y-%m-%d %H:%M:%S')] [WARN] $*"
+        echo "$message" >&2
+        echo "$message" >&3
+    fi
+}
+
+log_error() {
+    if [ "$LOG_LEVEL" -le "$LOG_LEVEL_ERROR" ]; then
+        local message
+        message="[$(date '+%Y-%m-%d %H:%M:%S')] [ERROR] $*"
+        echo "$message" >&2
+        echo "$message" >&3
+    fi
+}
 
 #======================================================
 # Configuration
@@ -24,19 +66,21 @@ CONFIG_FILE="${PFSYSCONFDIR}/pflogsumui.conf"
 #Create Blank Config File if it does not exist
 if [ ! -f "$CONFIG_FILE" ]; then
     log_info "Creating default configuration at $CONFIG_FILE"
+    DETECTED_LOG=$(detect_mail_log)
+    DETECTED_PFLOGSUMM=$(detect_pflogsumm)
     tee "$CONFIG_FILE" <<EOF
 #PFLOGSUMUI CONFIG
 
 ##  Postfix Log Location
-LOGFILELOCATION="/var/log/maillog"
+LOGFILELOCATION="${DETECTED_LOG}"
 
 ##  pflogsumm details
 ##  NOTE: DONT USE -d today - breaks the script
 PFLOGSUMMOPTIONS=" --verbose_msg_detail --zero_fill "
-PFLOGSUMMBIN="/usr/sbin/pflogsumm  "
+PFLOGSUMMBIN="${DETECTED_PFLOGSUMM}"
 
 ##  HTML Output
-HTMLOUTPUTDIR="/var/www/html/"
+HTMLOUTPUTDIR="/var/www/html"
 HTMLOUTPUT_INDEXDASHBOARD="index.html"
 
 ## Language (en or es)
@@ -51,6 +95,9 @@ fi
 #Load Config File
 log_info "Loading configuration from $CONFIG_FILE"
 . "$CONFIG_FILE"
+
+# Normalize paths (strip trailing slashes to avoid double slashes)
+HTMLOUTPUTDIR="${HTMLOUTPUTDIR%/}"
 
 # Default Language if not set
 LANGUAGE=${LANGUAGE:-"en"}
@@ -84,13 +131,34 @@ CURRENTDAY=$(date +"%e")
 log_info "Validating configuration..."
 
 if [ ! -f "$LOGFILELOCATION" ]; then
-    log_error "Log file not found: $LOGFILELOCATION"
-    exit 1
+    log_warn "Log file not found: $LOGFILELOCATION"
+    DETECTED_LOG=$(detect_mail_log)
+    if [ "$DETECTED_LOG" != "$LOGFILELOCATION" ] && [ -f "$DETECTED_LOG" ]; then
+        log_info "Auto-detected mail log: $DETECTED_LOG"
+        LOGFILELOCATION="$DETECTED_LOG"
+    else
+        log_error "No mail log found at $LOGFILELOCATION or $DETECTED_LOG"
+        log_error "Please set LOGFILELOCATION in $CONFIG_FILE"
+        exit 1
+    fi
 fi
 
 PFLOGSUMM_BIN="${PFLOGSUMMBIN%% *}"
 if ! command -v "$PFLOGSUMM_BIN" &>/dev/null; then
-    log_error "pflogsumm binary not found: $PFLOGSUMM_BIN"
+    log_warn "pflogsumm binary not found: $PFLOGSUMM_BIN"
+    DETECTED_PFLOGSUMM=$(detect_pflogsumm)
+    if [ "$DETECTED_PFLOGSUMM" != "$PFLOGSUMM_BIN" ] && [ -x "$DETECTED_PFLOGSUMM" ]; then
+        log_info "Auto-detected pflogsumm: $DETECTED_PFLOGSUMM"
+        PFLOGSUMMBIN="$DETECTED_PFLOGSUMM"
+        PFLOGSUMM_BIN="$DETECTED_PFLOGSUMM"
+    else
+        log_error "pflogsumm not found. Install it or set PFLOGSUMMBIN in $CONFIG_FILE"
+        exit 1
+    fi
+fi
+
+if ! command -v envsubst &>/dev/null; then
+    log_error "envsubst not found. Install gettext-base (Debian/Ubuntu) or gettext (RHEL/Fedora)"
     exit 1
 fi
 
@@ -107,8 +175,13 @@ trap 'rm -rf "$TMPDIR"' EXIT
 # Run pflogsumm
 #======================================================
 log_info "Running pflogsumm on $LOGFILELOCATION..."
-if ! $PFLOGSUMMBIN $PFLOGSUMMOPTIONS -e "$LOGFILELOCATION" > "$TMPDIR/mailreport"; then
+if ! "$PFLOGSUMM_BIN" $PFLOGSUMMOPTIONS -e "$LOGFILELOCATION" > "$TMPDIR/mailreport"; then
     log_error "pflogsumm failed on $LOGFILELOCATION"
+    exit 1
+fi
+
+if [ ! -s "$TMPDIR/mailreport" ]; then
+    log_error "pflogsumm produced no report for $LOGFILELOCATION"
     exit 1
 fi
 log_info "pflogsumm completed successfully"
@@ -124,7 +197,9 @@ generate_all_tables "$TMPDIR"
 # Export and Render Report HTML
 #======================================================
 export LANGUAGE ACTIVEHOSTNAME REPORTDATE CURRENTYEAR CURRENTMONTH CURRENTDAY
-export $(compgen -v L_)
+while IFS= read -r language_variable; do
+    export "$language_variable"
+done < <(compgen -v L_)
 
 export_table_data "$TMPDIR"
 

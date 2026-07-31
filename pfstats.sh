@@ -3,6 +3,13 @@ set -euo pipefail
 # Debug option - should be disabled unless required
 #set -x
 
+SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "${SCRIPTDIR}/lib/detect.sh"
+
+# Defaults for optional parameters
+CUSTOMDATE=""
+CUSTOMLOG=""
+CUSTOMMONTH=""
 
 #Get Command Line Parameters for the custom date e.g.  -d "Nov 03"
 POSITIONAL=()
@@ -35,23 +42,30 @@ case $key in
     ;;
 esac
 done
-set -- "${POSITIONAL[@]}" # restore positional parameters
+if [[ ${#POSITIONAL[@]} -gt 0 ]]; then
+    set -- "${POSITIONAL[@]}" # restore positional parameters
+else
+    set --
+fi
 
 #Select Temporal
 if [[ -z "${CUSTOMMONTH}" ]]; then
     #If custom date is not set - default to current date e.g. 'Dec  9'
     if [[ -z "${CUSTOMDATE}" ]]; then
         LOGDATE=$(date +'%b %e')
+        LOGDATE_PATTERN="$(date +'%b %e')|$(date +'%Y-%m-%d')"
     else
         LOGDATE=$CUSTOMDATE
+        LOGDATE_PATTERN=$CUSTOMDATE
     fi
 else
     LOGDATE=$( echo ${CUSTOMMONTH} | sed 's/.*/\L&/; s/[a-z]*/\u&/g')
+    LOGDATE_PATTERN=$LOGDATE
 fi
 
 #Custom Log file(s)
 if [[ -z "${CUSTOMLOG}" ]]; then
-    LOGFILELOCATION="/var/log/maillog"
+    LOGFILELOCATION=$(detect_mail_log)
 else
     LOGFILELOCATION=${CUSTOMLOG}
 fi
@@ -72,30 +86,36 @@ CURRENTDAY=$(date +'%e')
 
 #Get Counts
 
+count_matches() {
+    local pattern=$1
+    grep -E "$LOGDATE_PATTERN" "$LOGFILELOCATION" 2>/dev/null \
+        | grep -E -c "$pattern" \
+        || true
+}
 
-Sent=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep  -c 'postfix/smtp.*status=sent' )
-Dfr=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep  -c 'postfix/smtp.*status=deferred' )
-Bnc=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep  -c 'postfix/smtp.*status=bounce' )
-RelayAccDnd=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep  -c 'postfix/smtp.*Relay access denied' )
-EnvelopeBlocked=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep  -c -E '*550.*Envelope blocked' )
+Sent=$(count_matches 'postfix/smtp.*status=sent')
+Dfr=$(count_matches 'postfix/smtp.*status=deferred')
+Bnc=$(count_matches 'postfix/smtp.*status=bounce')
+RelayAccDnd=$(count_matches 'postfix/smtp.*Relay access denied')
+EnvelopeBlocked=$(count_matches '550.*Envelope blocked')
 
-greylist=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep  -c 'postfix/smtp.*[Gg]reylist' )
-Received=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep  -c 'postfix/smtpd.*client=' )
-Rejected=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep -c -oP 'rejected: \K.*' )
-SpamCount=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep -c 'status=sent.*spam' )
-MailVirus=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep -c -i 'infected' )
+greylist=$(count_matches 'postfix/smtp.*[Gg]reylist')
+Received=$(count_matches 'postfix/smtpd.*client=')
+Rejected=$(count_matches 'rejected: ')
+SpamCount=$(count_matches 'status=sent.*spam')
+MailVirus=$(count_matches '[Ii][Nn][Ff][Ee][Cc][Tt][Ee][Dd]')
 
-PREGREET=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep 'postfix/postscreen' | grep  -c 'PREGREET' )
-CONNECT=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep 'postfix/postscreen' | grep  -c 'CONNECT' )
-DISCONNECT=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep 'postfix/postscreen' | grep  -c 'DISCONNECT' )
-HANGUP=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep 'postfix/postscreen' | grep  -c 'HANGUP' )
-DNSBL=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep 'postfix/postscreen' | grep  -c 'DNSBL' )
-AccountLogins=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep  -c  'postfix/.*sasl_username' )
+PREGREET=$(count_matches 'postfix/postscreen.*PREGREET')
+CONNECT=$(count_matches 'postfix/postscreen.*CONNECT')
+DISCONNECT=$(count_matches 'postfix/postscreen.*DISCONNECT')
+HANGUP=$(count_matches 'postfix/postscreen.*HANGUP')
+DNSBL=$(count_matches 'postfix/postscreen.*DNSBL')
+AccountLogins=$(count_matches 'postfix/.*sasl_username')
 
-warning=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep -c -i 'warning' )
-error=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep -c -i 'error' )
-fatal=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep -c -i 'fatal' )
-panic=$( grep  "$LOGDATE" $LOGFILELOCATION 2>/dev/null | grep -c -i 'panic' )
+warning=$(count_matches '[Ww][Aa][Rr][Nn][Ii][Nn][Gg]')
+error=$(count_matches '[Ee][Rr][Rr][Oo][Rr]')
+fatal=$(count_matches '[Ff][Aa][Tt][Aa][Ll]')
+panic=$(count_matches '[Pp][Aa][Nn][Ii][Cc]')
 
 echo "Report Run       : $REPORTDATE"
 echo "Log Date Extract : $LOGDATE"
